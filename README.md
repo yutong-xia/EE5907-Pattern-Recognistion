@@ -6,7 +6,7 @@ The aim of this project is to construct a face recognition system via Principal 
 
 Firstly, PCA is used to perform data dimensionality reduction and visualization, in order to understand underlying data distribution. Then two classification methods, LDA and SVM, are used to classify the face images. GMM is used to group the face images. 
 
-How to run the code in this file is descibed as follows.
+To run the models in this file is descibed as follows.
 
 ## PCA
 
@@ -14,9 +14,15 @@ How to run the code in this file is descibed as follows.
 
 ## LDA
 
+`python main.py --model LDA`
+
 
 
 ## SVM
 
+`python main.py --model SVM`
+
 
 ## GMM
+
+`python main.py --model GMM`
