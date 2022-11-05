@@ -76,7 +76,7 @@ def gen_dataset():
     np.save('./data/test_x.npy', test_x)
     np.save('./data/test_y.npy', test_y)
     
-    print('Train: {}, Test 2: {}'.format(train_x.shape, test_x.shape))
+    print('Train: {}, Test: {}'.format(train_x.shape, test_x.shape))
     
 gen_dataset()
 train_x = np.load('./data/train_x.npy')
@@ -85,9 +85,9 @@ test_x = np.load('./data/test_x.npy')
 test_y = np.load('./data/test_y.npy')
 
 if args.model == 'PCA':
-    # randomly choose 490 samples and add 10 self sample
-    idx = random.sample([i for i in range(len(dataset1))], 490)
-    data_pca = np.concatenate([dataset1[idx], dataset2[:10]],0)
+    # randomly choose 493 samples from PIE and 7 self samples
+    idx = random.sample([i for i in range(len(train_x)-7)], 493)
+    data_pca = np.concatenate([train_x[idx],train_x[-7:] ], 0)
     # apply PCA
     x_pca = PCA(data_pca, save_fig = args.save_fig)
     x_pca.plot_raw()
