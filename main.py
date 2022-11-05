@@ -13,6 +13,7 @@ from model.classifier import kNN, get_metrics
 from model.PCA import PCA
 from model.LDA import LDA
 from model.GMM import GMM
+from model.SVM import SVM
 
 parser = argparse.ArgumentParser()
 
@@ -140,17 +141,47 @@ if args.model == 'LDA':
     results.to_csv('./results/lda_classification.csv', index = False)
         
 if args.model=='GMM':
+    model = GMM()
     # use the raw face images
     x_gmm = train_x.reshape(-1, 32*32)
+    x_gmm = (x_gmm - np.mean(x_gmm, axis = 0))/ np.std(x_gmm, axis = 0)
+    
+    model.fit(x_gmm)
+    results = model.predict(x_gmm)
+    print(results.shape)
+    print(results)
+    input()
     
     # use the face vectors after PCA pre-processing
     x_pca = PCA(train_x, save_fig = args.save_fig)
     for i, dim in enumerate([200, 80]):
         x_reduced = x_pca.reduce_dim(n_component = dim)
-        model = GMM(n_components = 3)
-        
+        model = GMM()
+        model.fit(x_reduced)
+        results = model.predict(x_reduced)
 
+        
 if args.model=='SVM':
-    pass 
+    test_x = test_x.reshape(-1, 32*32)
+    results = pd.DataFrame(columns=['input','c','acc'])
+    for i in range(3):
+        if i == 0: # use the raw face images
+            x_svm = train_x.reshape(-1, 32*32)
+            input_data = 'Raw'
+        if i == 1: # use the face vectors after PCA pre-processing
+            x_pca = PCA(train_x, save_fig = args.save_fig)
+            x_svm = x_pca.reduce_dim(n_component = 200)
+            input_data = 'PCA200'
+        if i == 2: # use the face vectors after PCA pre-processing
+            x_pca = PCA(train_x, save_fig = args.save_fig)
+            x_svm = x_pca.reduce_dim(n_component = 80)
+            input_data = 'PCA80'
+        
+        for c in [0.01,0.1, 1]:
+            model = SVM(c=c)
+            model.fit(x_svm, train_y)
+            p_label, p_acc, p_val = model.predict(test_x, test_y)
+            results.loc[len(results.index)] = [input_data, c, p_acc[0]]
+    results.to_csv('./results/svm_classification.csv', index = False)
     
 print('The results of method {} are saved in "./results"'.format(args.__module__))
