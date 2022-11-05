@@ -9,8 +9,10 @@ import random
 import matplotlib.image as mpimg
 import glob
 import os
-from model.classifier import kNN 
+from model.classifier import kNN, get_metrics
 from model.PCA import PCA
+from model.LDA import LDA
+from model.GMM import GMM
 
 parser = argparse.ArgumentParser()
 
@@ -26,8 +28,8 @@ def str_to_bool(value):
 parser.add_argument('--model', type=str, default='PCA',help='which model/method you want to run [PCA, LDA, GMM, SVM]')
 # parser.add_argument('--use_cache', type=str_to_bool, default=True, help='if use cache dataset')
 parser.add_argument('--save_fig', type=str_to_bool, default=True)
-# PCA
-# parser.add_argument('--n_components', type=int, default=10)
+# kNN
+parser.add_argument('--k', type=int, default=10)
 
 args = parser.parse_args()
 
@@ -55,7 +57,7 @@ def gen_dataset():
             test_x.append(sample)
             test_y.append(sub_idx)
     
-    ####### self data #########
+    ######### self data #########
     for idx in range(1,8):
         sample = mpimg.imread('PIE/self/{}.jpg'.format(idx))
         if len(sample.shape) == 3:
@@ -78,7 +80,7 @@ def gen_dataset():
     
     print('Train: {}, Test: {}'.format(train_x.shape, test_x.shape))
     
-gen_dataset()
+# gen_dataset()
 train_x = np.load('./data/train_x.npy')
 train_y = np.load('./data/train_y.npy')
 test_x = np.load('./data/test_x.npy')
@@ -88,9 +90,10 @@ if args.model == 'PCA':
     # randomly choose 493 samples from PIE and 7 self samples
     idx = random.sample([i for i in range(len(train_x)-7)], 493)
     data_pca = np.concatenate([train_x[idx],train_x[-7:] ], 0)
+    label_pca = np.concatenate([train_y[idx], [26 for i in range(7)]], 0)
     # apply PCA
     x_pca = PCA(data_pca, save_fig = args.save_fig)
-    x_pca.plot_raw()
+    # x_pca.plot_raw()
     # reduce the dim to 2d and 3d
     x_reduced_2d = x_pca.reduce_dim(n_component = 2)
     x_reduced_3d = x_pca.reduce_dim(n_component = 3)
@@ -103,9 +106,51 @@ if args.model == 'PCA':
     # x_pca.plot_recon()
 
     # reduce the dim to 40 80 and 200
-    for dim in [40, 80, 200]:
+    results = pd.DataFrame(columns=['Dimension','PIE', 'self'])
+    for i, dim in enumerate([40, 80, 200]):
         x_reduced = x_pca.reduce_dim(n_component = dim)
+        x_reduced_test = x_pca.reduce_test_dim(test_x)
+        preds = kNN(x_reduced, label_pca , x_reduced_test, args.k)
+        acc1, acc2 = get_metrics(preds, test_y)
+        print('Dimension:{}, ACC1:{}, ACC2:{}'.format(dim, acc1, acc2))
+        results.loc[i,'Dimension'] = dim
+        results.loc[i,'PIE'] = acc1
+        results.loc[i,'self'] = acc2
+    results.to_csv('./results/pca_classification.csv', index = False)
 
+if args.model == 'LDA':
+    # randomly choose 493 samples from PIE and 7 self samples
+    idx = random.sample([i for i in range(len(train_x)-7)], 493)
+    data_lda = np.concatenate([train_x[idx],train_x[-7:] ], 0)
+    label_lda = np.concatenate([train_y[idx], [26 for i in range(7)]], 0)
+    # apply lda
+    x_lda = LDA(data_lda,label_lda, save_fig = args.save_fig)
+    results = pd.DataFrame(columns=['Dimension','PIE', 'self'])
+    for i, dim in enumerate([2, 3, 9]):
+        x_reduced = x_lda.reduce_dim(n_component = dim)
+        if dim != 9:
+            x_lda.plot_data(x_reduced)
+        x_reduced_test = x_lda.reduce_test_dim(test_x)
+        preds = kNN(x_reduced, label_lda , x_reduced_test, args.k)
+        acc1, acc2 = get_metrics(preds, test_y)
+        print('Dimension:{}, ACC1:{}, ACC2:{}'.format(dim, acc1, acc2))
+        results.loc[i,'Dimension'] = dim
+        results.loc[i,'PIE'] = acc1
+        results.loc[i,'self'] = acc2
+    results.to_csv('./results/lda_classification.csv', index = False)
+        
+if args.model=='GMM':
+    # use the raw face images
+    x_gmm = train_x.reshape(-1, 32*32)
+    
+    # use the face vectors after PCA pre-processing
+    x_pca = PCA(train_x, save_fig = args.save_fig)
+    for i, dim in enumerate([200, 80]):
+        x_reduced = x_pca.reduce_dim(n_component = dim)
+        model = GMM(n_components = 3)
+        
 
-
-print('The results are saved in "./results"')
+if args.model=='SVM':
+    pass 
+    
+print('The results of method {} are saved in "./results"'.format(args.__module__))

@@ -5,10 +5,15 @@ import os
 class PCA:
     def __init__(self, X, save_fig = True):
         self.X = X.reshape(X.shape[0], -1)
+        self.eigenvector = None
         self.save_fig = save_fig
         if save_fig:
             if not os.path.exists('./results'):
                 os.mkdir('./results')
+        self.X_meaned = None # use for data reconstruction
+        self.x_recon = None # use for data reconstruction
+        self.sorted_eigenvectors = None # use for plot pc (eigenfaces)
+        
         
     def plot_raw(self, num_samples = 25):
         fig = plt.figure(figsize=(10,10), dpi = 200)
@@ -21,7 +26,7 @@ class PCA:
         if self.save_fig:
             plt.savefig('./results/pca_origin.png')
             
-    
+        
     def reduce_dim(self, n_component=None):
         # get the mean and center the data
         X_meaned = self.X - np.mean(self.X , axis = 0) 
@@ -40,30 +45,33 @@ class PCA:
                 if sum(sorted_eigenvalue[:n_component])/sum(sorted_eigenvalue) > 0.95:
                     break
             print('Choose p={} based on 0.95 of variation to retain.'.format(n_component))
-         
+        
         eigenvector_subset = sorted_eigenvectors[:,0: n_component] # [1024, n_component]
         self.eigenvector = eigenvector_subset
         # Transform the data
         X_reduced = np.dot(eigenvector_subset.transpose() , X_meaned.transpose() ).transpose()
-        self.X_reduced = X_reduced
         return X_reduced
     
-    def plot_data(self, X_reduced):
+    def reduce_test_dim(self, test_x):
+        test_x = test_x.reshape(-1, 32*32)
+        X_meaned = test_x - np.mean(test_x , axis = 0) 
+        X_reduced = np.dot(self.eigenvector.transpose() , X_meaned.transpose() ).transpose()
+        return X_reduced
+    
+    def plot_data(self, X_reduced, figsize = (5,5)):
         if X_reduced.shape[-1] == 2:
-            plt.figure(figsize=(10,10), dpi = 200)
+            plt.figure(figsize=figsize, dpi = 200)
             plt.scatter(X_reduced[:-7,0], X_reduced[:-7, 1], label= 'PIE photo')
             plt.scatter(X_reduced[-7:,0], X_reduced[-7:, 1], label= 'self photo')
-            plt.legend()
-            if self.save_fig:
-                plt.savefig('./results/pca_2d.png')
         elif X_reduced.shape[-1] == 3:
-            fig = plt.figure(figsize=(10,10), dpi = 200)
+            fig = plt.figure(figsize=figsize, dpi = 200)
             ax = fig.add_subplot(projection='3d')
             ax.scatter(X_reduced[:-7,0], X_reduced[:-7, 1],X_reduced[:-7, 2], label= 'PIE photo')
             ax.scatter(X_reduced[-7:,0], X_reduced[-7:, 1],X_reduced[-7:, 2], label= 'self photo')
-            plt.legend()
-            if self.save_fig:
-                plt.savefig('./results/pca_3d.png')
+        plt.legend()
+        if self.save_fig:
+            plt.tight_layout()
+            plt.savefig('./results/pca_{}d.png'.format(X_reduced.shape[-1]))
         
     
     
@@ -77,7 +85,7 @@ class PCA:
         self.x_recon = x_recon.reshape(-1, 32, 32)
 
     def plot_pc(self, num_samples = 3):
-        fig = plt.figure(figsize=(10,10), dpi = 200)
+        fig = plt.figure(figsize=(9,3), dpi = 200)
         for i in range(num_samples):
             ax = fig.add_subplot(1,3,i+1)
             ax.set_xticks([])
@@ -85,6 +93,7 @@ class PCA:
             ax.imshow(self.sorted_eigenvectors[:,i].reshape(32,32),cmap='gray')
         plt.subplots_adjust(wspace=0, hspace=0)
         if self.save_fig:
+            plt.tight_layout()
             plt.savefig('./results/pca_eigenfaces.png')
             
     def plot_recon(self, num_samples = 25):
