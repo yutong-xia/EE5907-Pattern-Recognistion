@@ -21,13 +21,29 @@ class GMM:
         
         random_row = np.random.randint(low=0, high=self.n, size=self.n_components)
         self.mu = [X[row_index] for row_index in random_row ]
-        self.sigma = [ np.cov(X.T) for _ in range(self.n_components) ]
+        
+        # self.mu = []
+        # offset = 1 // (self.n_components-1)
+        # for i in range(self.n_components):
+        #     if i == 0:
+        #         self.mu.append(np.mean(X, 0) - offset)
+        #     elif i == 1:
+        #         self.mu.append(np.mean(X, 0))
+        #     elif i == 2:
+        #         self.mu.append(np.mean(X, 0) + offset)
+                
+        # offset = np.max(X, 0) - np.min(X, 0) // (self.n_components-1)
+        # for i in range(self.n_components):
+        #     self.mu.append(np.min(X, 0) + offset * i)
+            
+        # self.sigma = [ np.cov(X.T) for _ in range(self.n_components) ]
+        self.sigma = [ np.cov(X.T)for _ in range(self.n_components) ]
         
     def fit(self, X):
         self.initialize(X)
         
-        for _ in range(self.max_iter):
-            # print(_)
+        for iter in range(self.max_iter):
+            print('iter: {}'.format(iter))
             self.e_step(X)
             self.m_step(X)
     
@@ -47,10 +63,8 @@ class GMM:
     def predict_proba(self, X):
         likelihood = np.zeros( (self.n, self.n_components) )
         for i in range(self.n_components):
-            distribution = multivariate_normal(
-                mean=self.mu[i], 
-                cov=self.sigma[i])
-            likelihood[:,i] = distribution.pdf(X)
+            distribution = multivariate_normal(mean=self.mu[i], cov=self.sigma[i], allow_singular=True)
+            likelihood[:,i] = distribution.pdf(X)  # pdf : probability denisty function
             # print(distribution.pdf(X))
         
         numerator = likelihood * self.phi
@@ -63,9 +77,10 @@ class GMM:
         return np.argmax(weights, axis=1)
     
     def visual(self, X, preds, figsize = (10, 10)):
-        for i in range(self.n_components):
-            class_items_idx = np.flatnonzero(preds == i)
-            class_items = X[class_items_idx].reshape(-1, 32, 32)
+        unique_class = np.unique(preds)
+        for i, c in enumerate(unique_class):
+            class_items_idx = np.flatnonzero(preds == c)
+            class_items = X[class_items_idx]
             n_cols = 10
             n_rows = class_items.shape[0] // 10
             fig = plt.figure(figsize=figsize, dpi = 200)

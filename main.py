@@ -1,10 +1,7 @@
 import argparse
 import os
-import torch
 import numpy as np
 import pandas as pd
-import seaborn as sb
-import matplotlib.pyplot as plt
 import random
 import matplotlib.image as mpimg
 import glob
@@ -31,6 +28,9 @@ parser.add_argument('--model', type=str, default='PCA',help='which model/method 
 parser.add_argument('--save_fig', type=str_to_bool, default=True)
 # kNN
 parser.add_argument('--k', type=int, default=10)
+# GMM
+parser.add_argument('--max_iter', type=int, default=10)
+parser.add_argument('--n_components', type=int, default=3)
 
 args = parser.parse_args()
 
@@ -119,7 +119,7 @@ if args.model == 'PCA':
         results.loc[i,'self'] = acc2
     results.to_csv('./results/pca_classification.csv', index = False)
 
-if args.model == 'LDA':
+elif args.model == 'LDA':
     # randomly choose 493 samples from PIE and 7 self samples
     idx = random.sample([i for i in range(len(train_x)-7)], 493)
     data_lda = np.concatenate([train_x[idx],train_x[-7:] ], 0)
@@ -140,18 +140,16 @@ if args.model == 'LDA':
         results.loc[i,'self'] = acc2
     results.to_csv('./results/lda_classification.csv', index = False)
         
-if args.model=='GMM':
-    model = GMM()
+elif args.model=='GMM':
+    model = GMM(n_components = args.n_components, max_iter=args.max_iter)
     # use the raw face images
     x_gmm = train_x.reshape(-1, 32*32)
     x_gmm = (x_gmm - np.mean(x_gmm, axis = 0))/ np.std(x_gmm, axis = 0)
     
     model.fit(x_gmm)
     results = model.predict(x_gmm)
-    print(results.shape)
-    print(results)
+    model.visual(train_x, results)
     input()
-    
     # use the face vectors after PCA pre-processing
     x_pca = PCA(train_x, save_fig = args.save_fig)
     for i, dim in enumerate([200, 80]):
@@ -159,29 +157,30 @@ if args.model=='GMM':
         model = GMM()
         model.fit(x_reduced)
         results = model.predict(x_reduced)
+        model.visual(train_x, results)
 
         
-if args.model=='SVM':
+elif args.model=='SVM':
     test_x = test_x.reshape(-1, 32*32)
     results = pd.DataFrame(columns=['input','c','acc'])
     for i in range(3):
         if i == 0: # use the raw face images
             x_svm = train_x.reshape(-1, 32*32)
             input_data = 'Raw'
-        if i == 1: # use the face vectors after PCA pre-processing
-            x_pca = PCA(train_x, save_fig = args.save_fig)
+        elif i == 1: # use the face vectors after PCA pre-processing
+            x_pca = PCA(train_x, save_fig = False)
             x_svm = x_pca.reduce_dim(n_component = 200)
             input_data = 'PCA200'
-        if i == 2: # use the face vectors after PCA pre-processing
-            x_pca = PCA(train_x, save_fig = args.save_fig)
+        elif i == 2: # use the face vectors after PCA pre-processing
+            x_pca = PCA(train_x, save_fig = False)
             x_svm = x_pca.reduce_dim(n_component = 80)
             input_data = 'PCA80'
         
-        for c in [0.01,0.1, 1]:
+        for j, c in enumerate([0.01,0.1, 1]):
             model = SVM(c=c)
             model.fit(x_svm, train_y)
             p_label, p_acc, p_val = model.predict(test_x, test_y)
             results.loc[len(results.index)] = [input_data, c, p_acc[0]]
     results.to_csv('./results/svm_classification.csv', index = False)
     
-print('The results of method {} are saved in "./results"'.format(args.__module__))
+print('The results of method {} are saved in "./results"'.format(args.model))

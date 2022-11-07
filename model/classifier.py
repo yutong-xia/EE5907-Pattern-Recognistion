@@ -36,5 +36,5 @@ def kNN(train_x, train_y , test_x, k):
 def get_metrics(preds, labels):
     acc1 = metrics.accuracy_score(preds[:-3], labels[:-3]) ## test samples from PIE
     acc2 = metrics.accuracy_score(preds[-3:], labels[-3:]) ## test samples from self photo
-    return acc1, acc2
+    return acc1 * 100, acc2 * 100
     
