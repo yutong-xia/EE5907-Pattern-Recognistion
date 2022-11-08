@@ -2,7 +2,7 @@
 
 Coursework for EE5907 Pattern Recognition CA2, AY 2022/2023 Semester 1.
 
-The aim of this project is to construct a face recognition system via Principal Component Analysis (PCA), Linear Discriminative Analysis (LDA), Support Vector Machine (SVM) and Gaussian Mixture Model (GMM). PCA is used to perform data dimensionality reduction and visualization, in order to understand underlying data distribution. Two classification methods, LDA and SVM, are used to classify the face images. GMM is used to group the face images. PCA, LDA and GMM are from scratch, while the package `libsvm` is used for SVM models.
+The aim of this project is to construct a face recognition system via Principal Component Analysis (PCA), Linear Discriminative Analysis (LDA), Support Vector Machine (SVM) and Convolution Neural Network (CNN). PCA and LDA are used to perform data dimensionality reduction and visualization, in order to understand underlying data distribution. Then lower-dimensional data are classified based on the nearest neighbour classifier. In addition, SVM and CNN are also used to classify face images. PCA and LDA are from scratch, while the package `libsvm` is used for SVM models. CNN is builed based on `pytorch`.
 
 The detail setting of the experiments can be found in the corresponding report, which is accessible [here]().
 
@@ -14,6 +14,7 @@ The detail setting of the experiments can be found in the corresponding report, 
 - numpy == 1.21.5
 - pandas == 1.3.5
 - libsvm == 3.23.0.4
+- torch == 1.10.2
 
 
 Dependencies can be installed using the following command:
@@ -22,7 +23,7 @@ pip install -r requirements.txt
 ```
 
 ## Data
-The dataset used in this project contains the [CMU PIE dataset](https://data.nvision2.eecs.yorku.ca/PIE_dataset/) and the face photos taken by students themselves. There are in total of 68 different subjects and I selected the first 25 out of them. For each chosen subject, 70% for training and the remaining 30% for testing. Besides the CMU PIE images, there are 10 selfie photos used as samples after being converted to grey-scale images and resized into the same resolution (32 $\times$ 32) in `./PIE/self`.
+The dataset used in this project contains the [CMU PIE dataset](https://www.cs.cmu.edu/afs/cs/project/PIE/MultiPie/Multi-Pie/Home.html) and the face photos taken by students themselves. There are in total of 68 different subjects and I selected the first 25 out of them. For each chosen subject, 70% for training and the remaining 30% for testing. Besides the CMU PIE images, there are 10 selfie photos used as samples after being converted to grey-scale images and resized into the same resolution (32 $\times$ 32)  with provided PIE image data in `./PIE/self`.
 
 
 ## Reproducibility
@@ -68,14 +69,17 @@ Corresponding results of SVM will be stored in the folder `./results`:
 ├── results
 │   ├── svm_classification.csv
 ```
-### GMM
+### CNN
 
 ```
 python main.py --model GMM
 ```
 
-Corresponding results of GMM will be stored in the folder `./results`:
+Corresponding results of CNN will be stored in the folder `./results`:
 ```
 ├── results
-│   ├── gmm_classification.csv
+│   ├── cnn.pth
+│   ├── cnn_fig.pdf
+│   ├── cnn_loss.npy
+│   ├── cnn_acc.npy
 ```

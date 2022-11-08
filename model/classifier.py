@@ -2,9 +2,18 @@ import numpy as np
 from scipy.stats import mode
 import sklearn.metrics as metrics
 
+
 def get_distance(p1,p2):
     dist = np.sqrt(np.sum((p1-p2)**2))
     return dist
+
+# def get_distance(instance1,instance2):
+#     distance = 0
+#     for i in range(instance1.shape[0]):
+#         distance += (instance1[i] - instance2[i])**2
+
+#     return math.sqrt(distance)
+
  
 
 def kNN(train_x, train_y , test_x, k):

@@ -26,4 +26,5 @@ class SVM:
     def predict(self, test_x, test_y):
         test_x = self.trans_svm_data(test_x)
         p_label, p_acc, p_val = svm_predict(test_y, test_x, self.m)   
+
         return  p_label, p_acc, p_val

@@ -62,12 +62,12 @@ class PCA:
         if X_reduced.shape[-1] == 2:
             plt.figure(figsize=figsize, dpi = 200)
             plt.scatter(X_reduced[:-7,0], X_reduced[:-7, 1], label= 'PIE photo')
-            plt.scatter(X_reduced[-7:,0], X_reduced[-7:, 1], label= 'self photo')
+            plt.scatter(X_reduced[-7:,0], X_reduced[-7:, 1], label= 'selfie photo')
         elif X_reduced.shape[-1] == 3:
             fig = plt.figure(figsize=figsize, dpi = 200)
             ax = fig.add_subplot(projection='3d')
             ax.scatter(X_reduced[:-7,0], X_reduced[:-7, 1],X_reduced[:-7, 2], label= 'PIE photo')
-            ax.scatter(X_reduced[-7:,0], X_reduced[-7:, 1],X_reduced[-7:, 2], label= 'self photo')
+            ax.scatter(X_reduced[-7:,0], X_reduced[-7:, 1],X_reduced[-7:, 2], label= 'selfie photo')
         plt.legend()
         if self.save_fig:
             plt.tight_layout()

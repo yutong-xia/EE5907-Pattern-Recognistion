@@ -9,8 +9,10 @@ import os
 from model.classifier import kNN, get_metrics
 from model.PCA import PCA
 from model.LDA import LDA
-from model.GMM import GMM
+# from model.GMM import GMM
+from model.CNN import CNN, CNN_trainer, get_dataloader
 from model.SVM import SVM
+
 
 parser = argparse.ArgumentParser()
 
@@ -27,10 +29,13 @@ parser.add_argument('--model', type=str, default='PCA',help='which model/method 
 # parser.add_argument('--use_cache', type=str_to_bool, default=True, help='if use cache dataset')
 parser.add_argument('--save_fig', type=str_to_bool, default=True)
 # kNN
-parser.add_argument('--k', type=int, default=10)
+parser.add_argument('--k', type=list, default=[1, 3, 5, 7, 9, 11, 13])
 # GMM
 parser.add_argument('--max_iter', type=int, default=10)
 parser.add_argument('--n_components', type=int, default=3)
+# CNN
+parser.add_argument('--batch_size', type=int, default=16)
+parser.add_argument('--num_epochs', type=int, default=1000)
 
 args = parser.parse_args()
 
@@ -107,57 +112,82 @@ if args.model == 'PCA':
     # x_pca.plot_recon()
 
     # reduce the dim to 40 80 and 200
-    results = pd.DataFrame(columns=['Dimension','PIE', 'self'])
+    results = pd.DataFrame(columns=['Dimension','k','PIE', 'self'])
+
     for i, dim in enumerate([40, 80, 200]):
         x_reduced = x_pca.reduce_dim(n_component = dim)
         x_reduced_test = x_pca.reduce_test_dim(test_x)
-        preds = kNN(x_reduced, label_pca , x_reduced_test, args.k)
-        acc1, acc2 = get_metrics(preds, test_y)
-        print('Dimension:{}, ACC1:{}, ACC2:{}'.format(dim, acc1, acc2))
-        results.loc[i,'Dimension'] = dim
-        results.loc[i,'PIE'] = acc1
-        results.loc[i,'self'] = acc2
+        acc1_max, acc2_max = 0, 0
+        # acc1s, acc2s = [], []
+        for k in args.k:
+            preds = kNN(x_reduced, label_pca , x_reduced_test, k)
+            acc1, acc2 = get_metrics(preds, test_y)
+            # acc1s.append(acc1)
+            # acc2s.append(acc2)
+            print('Dimension:{}, K:{}, ACC1:{}, ACC2:{}'.format(dim, k, acc1, acc2))
+            if acc1 + acc2 > acc1_max + acc2_max:
+                results.loc[i,'Dimension'] = dim
+                results.loc[i,'PIE'] = acc1
+                results.loc[i,'self'] = acc2
+                results.loc[i,'k'] = k
+                acc1_max, acc2_max = acc1, acc2
     results.to_csv('./results/pca_classification.csv', index = False)
 
 elif args.model == 'LDA':
     # randomly choose 493 samples from PIE and 7 self samples
     idx = random.sample([i for i in range(len(train_x)-7)], 493)
     data_lda = np.concatenate([train_x[idx],train_x[-7:] ], 0)
-    label_lda = np.concatenate([train_y[idx], [26 for i in range(7)]], 0)
+    label_lda = np.concatenate([train_y[idx], [26 for _ in range(7)]], 0)
     # apply lda
     x_lda = LDA(data_lda,label_lda, save_fig = args.save_fig)
-    results = pd.DataFrame(columns=['Dimension','PIE', 'self'])
+    results = pd.DataFrame(columns=['Dimension','k', 'PIE', 'self'])
     for i, dim in enumerate([2, 3, 9]):
+        acc1_max, acc2_max = 0, 0
         x_reduced = x_lda.reduce_dim(n_component = dim)
         if dim != 9:
             x_lda.plot_data(x_reduced)
         x_reduced_test = x_lda.reduce_test_dim(test_x)
-        preds = kNN(x_reduced, label_lda , x_reduced_test, args.k)
-        acc1, acc2 = get_metrics(preds, test_y)
-        print('Dimension:{}, ACC1:{}, ACC2:{}'.format(dim, acc1, acc2))
-        results.loc[i,'Dimension'] = dim
-        results.loc[i,'PIE'] = acc1
-        results.loc[i,'self'] = acc2
+        for k in args.k:
+            preds = kNN(x_reduced, label_lda , x_reduced_test, k)
+            acc1, acc2 = get_metrics(preds, test_y)
+            print('Dimension:{}, K:{}, ACC1:{}, ACC2:{}'.format(dim, k, acc1, acc2))
+            if acc1 + acc2 > acc1_max + acc2_max:
+                results.loc[i,'Dimension'] = dim
+                results.loc[i,'PIE'] = acc1
+                results.loc[i,'self'] = acc2
+                results.loc[i,'k'] = k
+                acc1_max, acc2_max = acc1, acc2
     results.to_csv('./results/lda_classification.csv', index = False)
         
-elif args.model=='GMM':
-    model = GMM(n_components = args.n_components, max_iter=args.max_iter)
-    # use the raw face images
-    x_gmm = train_x.reshape(-1, 32*32)
-    x_gmm = (x_gmm - np.mean(x_gmm, axis = 0))/ np.std(x_gmm, axis = 0)
+# elif args.model=='GMM':
+#     model = GMM(n_components = args.n_components, max_iter=args.max_iter)
+#     # use the raw face images
+#     x_gmm = train_x.reshape(-1, 32*32)
+#     x_gmm = (x_gmm - np.mean(x_gmm, axis = 0))/ np.std(x_gmm, axis = 0)
     
-    model.fit(x_gmm)
-    results = model.predict(x_gmm)
-    model.visual(train_x, results)
-    input()
-    # use the face vectors after PCA pre-processing
-    x_pca = PCA(train_x, save_fig = args.save_fig)
-    for i, dim in enumerate([200, 80]):
-        x_reduced = x_pca.reduce_dim(n_component = dim)
-        model = GMM()
-        model.fit(x_reduced)
-        results = model.predict(x_reduced)
-        model.visual(train_x, results)
+#     model.fit(x_gmm)
+#     results = model.predict(x_gmm)
+#     model.visual(train_x, results)
+#     input()
+#     # use the face vectors after PCA pre-processing
+#     x_pca = PCA(train_x, save_fig = args.save_fig)
+#     for i, dim in enumerate([200, 80]):
+#         x_reduced = x_pca.reduce_dim(n_component = dim)
+#         model = GMM()
+#         model.fit(x_reduced)
+#         results = model.predict(x_reduced)
+#         model.visual(train_x, results)
+
+elif args.model=='CNN':
+    model = CNN()
+    
+    train_loader, test_loader = get_dataloader(train_x, train_y, test_x, test_y, args.batch_size)
+    
+    Trainer = CNN_trainer(model)
+    Trainer.train(train_loader, args.num_epochs, test_loader)
+    Trainer.plot_curve()
+    # accuracy = Trainer.test(test_loader)
+    # print(accuracy)
 
         
 elif args.model=='SVM':
