@@ -191,25 +191,28 @@ elif args.model=='CNN':
 
         
 elif args.model=='SVM':
-    test_x = test_x.reshape(-1, 32*32)
+    # test_x = test_x.reshape(-1, 32*32)
     results = pd.DataFrame(columns=['input','c','acc'])
     for i in range(3):
         if i == 0: # use the raw face images
             x_svm = train_x.reshape(-1, 32*32)
+            test_svm = test_x.reshape(-1, 32*32)
             input_data = 'Raw'
         elif i == 1: # use the face vectors after PCA pre-processing
             x_pca = PCA(train_x, save_fig = False)
             x_svm = x_pca.reduce_dim(n_component = 200)
+            test_svm = x_pca.reduce_test_dim(test_x)
             input_data = 'PCA200'
         elif i == 2: # use the face vectors after PCA pre-processing
             x_pca = PCA(train_x, save_fig = False)
             x_svm = x_pca.reduce_dim(n_component = 80)
+            test_svm = x_pca.reduce_test_dim(test_x)
             input_data = 'PCA80'
         
         for j, c in enumerate([0.01,0.1, 1]):
             model = SVM(c=c)
             model.fit(x_svm, train_y)
-            p_label, p_acc, p_val = model.predict(test_x, test_y)
+            p_label, p_acc, p_val = model.predict(test_svm, test_y)
             results.loc[len(results.index)] = [input_data, c, p_acc[0]]
     results.to_csv('./results/svm_classification.csv', index = False)
     
