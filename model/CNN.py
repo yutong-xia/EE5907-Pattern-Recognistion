@@ -25,8 +25,10 @@ def get_dataloader(train_x, train_y, test_x, test_y, batch_size):
 class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=20, kernel_size=5, stride=1, padding=1)
-        self.conv2 = nn.Conv2d(in_channels=20, out_channels=50, kernel_size=5, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=20, 
+                               kernel_size=5, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(in_channels=20, out_channels=50, 
+                               kernel_size=5, stride=1, padding=1)
         self.bn1 = nn.BatchNorm2d(20)
         self.bn2 = nn.BatchNorm2d(50)
         self.pool = nn.MaxPool2d(2,2)
@@ -34,12 +36,13 @@ class CNN(nn.Module):
         self.out = nn.Linear(500, 26)
 
     def forward(self, input):
-        output = self.pool(self.bn1(F.relu(self.conv1(input.unsqueeze(1)))) ) 
-        output = self.pool(self.bn2(F.relu(self.conv2(output))) )
+        output = F.relu(self.conv1(input.unsqueeze(1)))
+        output = self.pool(self.bn1(output))  
+        output = F.relu(self.conv2(output))
+        output = self.pool(self.bn2(output) )
         output = output.view(-1, 50 * 6 * 6)
         output = F.relu(self.fc1(output))
         output = F.relu(self.out(output))
-
         return output
     
 class CNN_trainer():
@@ -86,6 +89,7 @@ class CNN_trainer():
                 self.save_model()
             self.loss.append(np.mean(train_losses))
             self.acc.append(test_acc)
+        self.best_epoch = best_epoch
         np.save('./results/cnn_loss.npy', np.array(self.loss))
         np.save('./results/cnn_acc.npy', np.array(self.acc))
         print('Epoc {}: Best acc {}.'.format(best_epoch, max_acc))
@@ -114,24 +118,26 @@ class CNN_trainer():
         
     def plot_curve(self):
 
-        plt.figure(dpi=300,figsize=(12,5))
-        plt.subplot(121)
+        plt.figure(dpi=300,figsize=(8,6))
+        plt.subplot(211)
 
         plt.plot(range(self.num_epochs), self.loss, label = 'Train Loss')
 
         plt.ylabel('Loss')
         plt.xlabel('Epoch')
-        plt.title('(a) Train Loss', y = -0.2)
+        plt.title('(a) Train Loss', y = -0.3)
+        plt.vlines(self.best_epoch, 0, 3, colors = "#d37a7d", linestyles = "dashed")
         plt.legend()
-        
-        plt.subplot(122)
+
+        plt.subplot(212)
         plt.plot(range(self.num_epochs), self.acc, label = 'Test Accuracy')
 
         plt.ylabel('Accuracy')
         plt.xlabel('Epoch')
-        plt.title('(b) Test Accuracy', y = -0.2)
+        plt.title('(b) Test Accuracy', y = -0.3)
+        plt.vlines(self.best_epoch, 0, 100, colors = "#d37a7d", linestyles = "dashed")
         plt.legend()
 
-        # plt.tight_layout()
+        plt.tight_layout()
         plt.savefig('./results/cnn_fig.pdf', bbox_inches='tight')
         

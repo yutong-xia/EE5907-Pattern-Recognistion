@@ -34,11 +34,9 @@ class LDA:
 
         sorted_index = np.argsort(eigen_values)[::-1]
         sorted_eigenvectors = eigen_vectors[:,sorted_index]
+        self.sorted_eigenvectors = sorted_eigenvectors
         eigenvector_subset = sorted_eigenvectors[:,0: n_component]
         self.eigenvector = eigenvector_subset
-        # Transform the data
-        # X_meaned = self.X - np.mean(self.X , axis = 0) 
-        # X_reduced = np.dot(eigenvector_subset.transpose() , X_meaned.transpose() ).transpose()
         X_reduced = np.dot(eigenvector_subset.transpose() , self.X.transpose() ).transpose()
         return X_reduced
 
@@ -64,4 +62,16 @@ class LDA:
         if self.save_fig:
             plt.tight_layout()
             plt.savefig('./results/lda_{}d.png'.format(X_reduced.shape[-1]))
+            
+    def plot_pc(self, num_samples = 3, train_samples = 'all'):
+        fig = plt.figure(figsize=(9,3), dpi = 200)
+        for i in range(num_samples):
+            ax = fig.add_subplot(1,3,i+1)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.imshow(self.sorted_eigenvectors[:,i].reshape(32,32),cmap='gray')
+        plt.subplots_adjust(wspace=0, hspace=0)
+        if self.save_fig:
+            plt.tight_layout()
+            plt.savefig('./results/lda_eigenfaces_{}.png'.format(train_samples))
                 

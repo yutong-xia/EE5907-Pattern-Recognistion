@@ -72,7 +72,7 @@ Corresponding results of SVM will be stored in the folder `./results`:
 ### CNN
 
 ```
-python main.py --model GMM
+python main.py --model CNN
 ```
 
 Corresponding results of CNN will be stored in the folder `./results`:

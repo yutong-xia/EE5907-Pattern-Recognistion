@@ -28,6 +28,8 @@ def str_to_bool(value):
 parser.add_argument('--model', type=str, default='PCA',help='which model/method you want to run [PCA, LDA, GMM, SVM]')
 # parser.add_argument('--use_cache', type=str_to_bool, default=True, help='if use cache dataset')
 parser.add_argument('--save_fig', type=str_to_bool, default=True)
+# LDA
+parser.add_argument('--lda_500_sample', type=str_to_bool, default=False)
 # kNN
 parser.add_argument('--k', type=list, default=[1, 3, 5, 7, 9, 11, 13])
 # GMM
@@ -134,10 +136,16 @@ if args.model == 'PCA':
     results.to_csv('./results/pca_classification.csv', index = False)
 
 elif args.model == 'LDA':
-    # randomly choose 493 samples from PIE and 7 self samples
-    idx = random.sample([i for i in range(len(train_x)-7)], 493)
-    data_lda = np.concatenate([train_x[idx],train_x[-7:] ], 0)
-    label_lda = np.concatenate([train_y[idx], [26 for _ in range(7)]], 0)
+    if args.lda_500_sample:
+        # randomly choose 493 samples from PIE and 7 self samples
+        idx = random.sample([i for i in range(len(train_x)-7)], 493)
+        data_lda = np.concatenate([train_x[idx],train_x[-7:] ], 0)
+        label_lda = np.concatenate([train_y[idx], [26 for _ in range(7)]], 0)
+        n_train = 500
+    else:
+        data_lda = train_x
+        label_lda = train_y
+        n_train = 'all'
     # apply lda
     x_lda = LDA(data_lda,label_lda, save_fig = args.save_fig)
     results = pd.DataFrame(columns=['Dimension','k', 'PIE', 'self'])
@@ -146,6 +154,7 @@ elif args.model == 'LDA':
         x_reduced = x_lda.reduce_dim(n_component = dim)
         if dim != 9:
             x_lda.plot_data(x_reduced)
+            # x_lda.plot_pc(train_samples = n_train)
         x_reduced_test = x_lda.reduce_test_dim(test_x)
         for k in args.k:
             preds = kNN(x_reduced, label_lda , x_reduced_test, k)
