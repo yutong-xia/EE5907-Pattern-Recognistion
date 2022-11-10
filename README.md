@@ -4,7 +4,7 @@ Coursework for EE5907 Pattern Recognition CA2, AY 2022/2023 Semester 1.
 
 The aim of this project is to construct a face recognition system via Principal Component Analysis (PCA), Linear Discriminative Analysis (LDA), Support Vector Machine (SVM) and Convolution Neural Network (CNN). PCA and LDA are used to perform data dimensionality reduction and visualization, in order to understand underlying data distribution. Then lower-dimensional data are classified based on the nearest neighbour classifier. In addition, SVM and CNN are also used to classify face images. PCA and LDA are from scratch, while the package `libsvm` is used for SVM models. CNN is builed based on `pytorch`.
 
-The detail setting of the experiments can be found in the corresponding report, which is accessible [here]().
+The detail setting of the experiments can be found in the corresponding report, which is accessible [here](https://github.com/yutong-xia/EE5907/blob/main/files/EE5907_CA2_Report.pdf).
 
 ## Requirements
 

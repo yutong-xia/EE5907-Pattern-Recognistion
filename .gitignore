@@ -4,4 +4,6 @@ data/*
 
 *.zip
 
-PIE/self/*
+PIE*
+
+.ipynb_checkpoints*
